@@ -1,12 +1,37 @@
 package stemmer
 
+
+
+
+/*
+
+
+The Porter Stemming Algorithm
+
+把英文单词中非词干部分去掉..
+
+比如men---man
+复数变单数,
+worked---work
+
+
+算法细节在:
+
+https://tartarus.org/martin/PorterStemmer/def.txt
+
+
+
+
+
+
+*/
 import "fmt"
 import "bytes"
 
 func ingore() {
 	fmt.Sprintf("")
 }
-
+// 返回一个字符是不是辅音字母
 func Consonant(body []byte, offset int) bool {
 	switch body[offset] {
 	case 'A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u':
@@ -15,23 +40,65 @@ func Consonant(body []byte, offset int) bool {
 		if offset == 0 {
 			return true
 		}
+		//如果y的前面是元音,那么y就是辅音.
 		return offset > 0 && !Consonant(body, offset-1)
 	}
 	return true
 }
 
+
+
+
+
 func Vowel(body []byte, offset int) bool {
 	return !Consonant(body, offset)
 }
 
+
+
+
+
+
 const (
 	vowel_state = iota
+
 	consonant_state
 )
+/*
 
+
+
+These may all be represented by the single form
+
+    [C]VCVC ... [V]
+
+where the square brackets denote arbitrary presence of their contents.
+Using (VC){m} to denote VC repeated m times, this may again be written as
+
+    [C](VC){m}[V].
+
+m will be called the \measure\ of any word or word part when represented in
+this form. The case m = 0 covers the null word. Here are some examples:
+
+    m=0    TR,  EE,  TREE,  Y,  BY.
+    m=1    TROUBLE,  OATS,  TREES,  IVY.
+    m=2    TROUBLES,  PRIVATE,  OATEN,  ORRERY.
+
+
+
+
+
+
+
+
+
+*/
 func Measure(body []byte) int {
 	meansure := 0
 	if len(body) > 0 {
+
+		//当前位置是不是元音用state来记录.
+		// measure 就是表示vc这个组合多少次.
 		var state int
 		if Vowel(body, 0) {
 			state = vowel_state
@@ -42,7 +109,7 @@ func Measure(body []byte) int {
 			if Vowel(body, i) && state == consonant_state {
 				state = vowel_state
 			} else if Consonant(body, i) && state == vowel_state {
-				state = consonant_state
+				state = consonant_state//这里就是vc组合.
 				meansure++
 			}
 		}
@@ -59,6 +126,9 @@ func hasVowel(body []byte) bool {
 	return false
 }
 
+
+
+// 复数 变单数.
 func one_a(body []byte) []byte {
 	if bytes.HasSuffix(body, []byte("sses")) || bytes.HasSuffix(body, []byte("ies")) {
 		return body[:len(body)-2]
@@ -345,6 +415,9 @@ func five_b(body []byte) []byte {
 	return body
 }
 
+
+
+//入口函数...
 func Stem(body []byte) []byte {
 	word := bytes.TrimSpace(bytes.ToLower(body))
 	if len(word) > 2 {
